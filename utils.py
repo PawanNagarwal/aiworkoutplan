@@ -1,13 +1,52 @@
-"""
-Utility functions for token calculation, file generation, and session management
-"""
-
 import json
 import streamlit as st
 from datetime import datetime
 from typing import Dict, List
+from config import GPT4O_INPUT_COST_PER_MILLION, GPT4O_OUTPUT_COST_PER_MILLION
 
+def calculate_token_costs(input_tokens: int, output_tokens: int) -> Dict[str, float]:
+    """Calculate costs for GPT-4o token usage"""
+    input_cost = (input_tokens / 1_000_000) * GPT4O_INPUT_COST_PER_MILLION
+    output_cost = (output_tokens / 1_000_000) * GPT4O_OUTPUT_COST_PER_MILLION
+    total_cost = input_cost + output_cost
+    
+    return {
+        'input_cost': input_cost,
+        'output_cost': output_cost,
+        'total_cost': total_cost
+    }
 
+def initialize_session_usage():
+    """Initialize session token usage tracking"""
+    if 'session_usage' not in st.session_state:
+        st.session_state.session_usage = {
+            'total_input_tokens': 0,
+            'total_output_tokens': 0,
+            'total_requests': 0,
+            'requests': []
+        }
+
+def update_session_usage(input_tokens: int, output_tokens: int, request_type: str = "Workout Generation"):
+    """Update session token usage tracking"""
+    initialize_session_usage()
+    
+    # Add to totals
+    st.session_state.session_usage['total_input_tokens'] += input_tokens
+    st.session_state.session_usage['total_output_tokens'] += output_tokens
+    st.session_state.session_usage['total_requests'] += 1
+    
+    # Add individual request
+    costs = calculate_token_costs(input_tokens, output_tokens)
+    st.session_state.session_usage['requests'].append({
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'type': request_type,
+        'input_tokens': input_tokens,
+        'output_tokens': output_tokens,
+        'total_tokens': input_tokens + output_tokens,
+        'input_cost': costs['input_cost'],
+        'output_cost': costs['output_cost'],
+        'total_cost': costs['total_cost']
+    })
 
 def create_workout_json_output(form_data: Dict, days_data: List[Dict]) -> str:
     """Create comprehensive JSON output for workout plan"""
