@@ -1,7 +1,3 @@
-"""
-Core business logic and OpenAI integration for workout plan generation
-"""
-
 import os
 import re
 import json
@@ -9,7 +5,7 @@ import openai
 import streamlit as st
 from typing import Dict, List
 from dotenv import load_dotenv
-# from utils import update_session_usage, calculate_token_costs
+from utils import update_session_usage, calculate_token_costs
 from config import FITNESS_LEVEL_DESCRIPTIONS
 
 # Load environment variables
@@ -172,14 +168,14 @@ Workout Type Distribution for {user_data['weekly_frequency']} days:
             output_tokens = usage.completion_tokens
             
             # Update session usage tracking
-            # update_session_usage(input_tokens, output_tokens, "Workout Plan Generation")
+            update_session_usage(input_tokens, output_tokens, "Workout Plan Generation")
             
             # Store latest usage in session state for display
             st.session_state.latest_usage = {
                 'input_tokens': input_tokens,
                 'output_tokens': output_tokens,
                 'total_tokens': input_tokens + output_tokens,
-                # 'costs': calculate_token_costs(input_tokens, output_tokens)
+                'costs': calculate_token_costs(input_tokens, output_tokens)
             }
             
             return response.choices[0].message.content
