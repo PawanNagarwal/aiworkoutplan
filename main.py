@@ -1,14 +1,9 @@
-"""
-Main Streamlit application for AI Workout Plan Generator
-Keep this as the single file for Streamlit execution
-"""
-
 import streamlit as st
 import time as time_module
 from config import PAGE_CONFIG, GPT4O_INPUT_COST_PER_MILLION, GPT4O_OUTPUT_COST_PER_MILLION
 from models import WorkoutPlanGenerator
 from ui_components import load_css, display_loading_animation, display_form, display_results
-# from utils import initialize_session_usage
+from utils import initialize_session_usage, calculate_token_costs
 
 # Set page configuration
 st.set_page_config(**PAGE_CONFIG)
@@ -18,7 +13,7 @@ def main():
     load_css()
     
     # Initialize session usage tracking
-    # initialize_session_usage()
+    initialize_session_usage()
     
     generator = WorkoutPlanGenerator()
     
@@ -49,73 +44,73 @@ def main():
                 api_key_available = True
                 st.success("✅ API key configured")
         
-        # # Navigation info
-        # if 'form_data' in st.session_state:
-        #     st.markdown("---")
-        #     st.markdown("### 📊 Current Session")
-        #     st.info(f"**Goal:** {st.session_state.form_data.get('goal', 'Unknown')}")
-        #     st.info(f"**Level:** {st.session_state.form_data.get('fitness_level', 'Unknown')}")
-        #     if st.session_state.page == 'results':
-        #         st.success("✅ Workout plan ready")
+        # Navigation info
+        if 'form_data' in st.session_state:
+            st.markdown("---")
+            st.markdown("### 📊 Current Session")
+            st.info(f"**Goal:** {st.session_state.form_data.get('goal', 'Unknown')}")
+            st.info(f"**Level:** {st.session_state.form_data.get('fitness_level', 'Unknown')}")
+            if st.session_state.page == 'results':
+                st.success("✅ Workout plan ready")
                 
-        #     # Display generation time in sidebar
-        #     if 'generation_time' in st.session_state:
-        #         st.markdown("---")
-        #         st.markdown("### ⏱️ Generation Stats")
-        #         st.metric("Generation Time", f"{st.session_state.generation_time:.2f}s")
+            # Display generation time in sidebar
+            if 'generation_time' in st.session_state:
+                st.markdown("---")
+                st.markdown("### ⏱️ Generation Stats")
+                st.metric("Generation Time", f"{st.session_state.generation_time:.2f}s")
         
-        # # Token Usage & Cost Tracking
-        # st.markdown("---")
-        # st.markdown("### 💰 Token Usage & Costs")
+        # Token Usage & Cost Tracking
+        st.markdown("---")
+        st.markdown("### 💰 Token Usage & Costs")
         
-        # # Token usage dropdown
-        # usage_view = st.selectbox(
-        #     "📊 Usage Information",
-        #     options=["Latest Request", "Session Total", "Request History"],
-        #     help="View token usage and cost information"
-        # )
+        # Token usage dropdown
+        usage_view = st.selectbox(
+            "📊 Usage Information",
+            options=["Latest Request", "Session Total", "Request History"],
+            help="View token usage and cost information"
+        )
         
-        # if usage_view == "Latest Request" and 'latest_usage' in st.session_state:
-        #     latest = st.session_state.latest_usage
-        #     st.metric("Input Tokens", f"{latest['input_tokens']:,}")
-        #     st.metric("Output Tokens", f"{latest['output_tokens']:,}")
-        #     st.metric("Total Tokens", f"{latest['total_tokens']:,}")
-        #     st.metric("Input Cost", f"${latest['costs']['input_cost']:.4f}")
-        #     st.metric("Output Cost", f"${latest['costs']['output_cost']:.4f}")
-        #     st.metric("Total Cost", f"${latest['costs']['total_cost']:.4f}")
+        if usage_view == "Latest Request" and 'latest_usage' in st.session_state:
+            latest = st.session_state.latest_usage
+            st.metric("Input Tokens", f"{latest['input_tokens']:,}")
+            st.metric("Output Tokens", f"{latest['output_tokens']:,}")
+            st.metric("Total Tokens", f"{latest['total_tokens']:,}")
+            st.metric("Input Cost", f"${latest['costs']['input_cost']:.4f}")
+            st.metric("Output Cost", f"${latest['costs']['output_cost']:.4f}")
+            st.metric("Total Cost", f"${latest['costs']['total_cost']:.4f}")
         
-        # elif usage_view == "Session Total" and st.session_state.session_usage['total_requests'] > 0:
-        #     session = st.session_state.session_usage
-        #     total_costs = calculate_token_costs(
-        #         session['total_input_tokens'], 
-        #         session['total_output_tokens']
-        #     )
+        elif usage_view == "Session Total" and st.session_state.session_usage['total_requests'] > 0:
+            session = st.session_state.session_usage
+            total_costs = calculate_token_costs(
+                session['total_input_tokens'], 
+                session['total_output_tokens']
+            )
             
-        #     st.metric("Total Requests", session['total_requests'])
-        #     st.metric("Total Input Tokens", f"{session['total_input_tokens']:,}")
-        #     st.metric("Total Output Tokens", f"{session['total_output_tokens']:,}")
-        #     st.metric("Total Tokens", f"{session['total_input_tokens'] + session['total_output_tokens']:,}")
-        #     st.metric("Session Input Cost", f"${total_costs['input_cost']:.4f}")
-        #     st.metric("Session Output Cost", f"${total_costs['output_cost']:.4f}")
-        #     st.metric("Session Total Cost", f"${total_costs['total_cost']:.4f}")
+            st.metric("Total Requests", session['total_requests'])
+            st.metric("Total Input Tokens", f"{session['total_input_tokens']:,}")
+            st.metric("Total Output Tokens", f"{session['total_output_tokens']:,}")
+            st.metric("Total Tokens", f"{session['total_input_tokens'] + session['total_output_tokens']:,}")
+            st.metric("Session Input Cost", f"${total_costs['input_cost']:.4f}")
+            st.metric("Session Output Cost", f"${total_costs['output_cost']:.4f}")
+            st.metric("Session Total Cost", f"${total_costs['total_cost']:.4f}")
         
-        # elif usage_view == "Request History" and st.session_state.session_usage['requests']:
-        #     st.markdown("**Request History:**")
-        #     for i, req in enumerate(reversed(st.session_state.session_usage['requests'][-5:])):  # Show last 5
-        #         with st.expander(f"Request {len(st.session_state.session_usage['requests']) - i}"):
-        #             st.write(f"**Time:** {req['timestamp']}")
-        #             st.write(f"**Type:** {req['type']}")
-        #             st.write(f"**Tokens:** {req['total_tokens']:,} ({req['input_tokens']:,} in + {req['output_tokens']:,} out)")
-        #             st.write(f"**Cost:** ${req['total_cost']:.4f}")
+        elif usage_view == "Request History" and st.session_state.session_usage['requests']:
+            st.markdown("**Request History:**")
+            for i, req in enumerate(reversed(st.session_state.session_usage['requests'][-5:])):  # Show last 5
+                with st.expander(f"Request {len(st.session_state.session_usage['requests']) - i}"):
+                    st.write(f"**Time:** {req['timestamp']}")
+                    st.write(f"**Type:** {req['type']}")
+                    st.write(f"**Tokens:** {req['total_tokens']:,} ({req['input_tokens']:,} in + {req['output_tokens']:,} out)")
+                    st.write(f"**Cost:** ${req['total_cost']:.4f}")
         
-        # elif st.session_state.session_usage['total_requests'] == 0:
-        #     st.info("No usage data yet. Generate a workout plan to see token usage and costs.")
+        elif st.session_state.session_usage['total_requests'] == 0:
+            st.info("No usage data yet. Generate a workout plan to see token usage and costs.")
         
-        # # Pricing information
-        # st.markdown("---")
-        # st.markdown("### 💳 GPT-4o Pricing")
-        # st.write(f"**Input:** ${GPT4O_INPUT_COST_PER_MILLION}/1M tokens")
-        # st.write(f"**Output:** ${GPT4O_OUTPUT_COST_PER_MILLION}/1M tokens")
+        # Pricing information
+        st.markdown("---")
+        st.markdown("### 💳 GPT-4o Pricing")
+        st.write(f"**Input:** ${GPT4O_INPUT_COST_PER_MILLION}/1M tokens")
+        st.write(f"**Output:** ${GPT4O_OUTPUT_COST_PER_MILLION}/1M tokens")
 
     if not api_key_available:
         st.error("❌ OpenAI API key is required. Please set it in your environment variables or enter it in the sidebar.")
